@@ -38,7 +38,7 @@ def getTimeline(tw, numtweets=200):
 
 def getEmbed(id_str):
     url = "https://api.twitter.com/1/statuses/oembed.json?id=" + id_str
-    response = urllib.request.urlopen(url)
+    response = urllib.request.urlopen(url, cafile="cacert.pem")
     # Next line feels wrong, but is the right way to do it: http://stackoverflow.com/a/6862922/535741
     try:
         json_data = json.loads(response.readall().decode('utf-8'))
@@ -54,6 +54,6 @@ if __name__ == "__main__":
     for tweet in timeline:
         id_str, timestamp = getTweetData(tweet)
         try:
-            print(getEmbed(tweet[id_str]))
+            print(getEmbed(id_str))
         except UnicodeEncodeError:
             pass #punt
