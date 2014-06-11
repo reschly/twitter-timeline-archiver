@@ -1,4 +1,4 @@
-from twitter import * # sudo pip3 install twitter
+import twitter # sudo pip3 install twitter
 import urllib
 import json
 import APIKEYS
@@ -12,9 +12,9 @@ oauthsecretvalue
 TIME_FORMAT = "%a %b %d %H:%M:%S %z %Y"
 
 def getTwitterByConfig(filename="MYCREDS.txt"):
-    oauth_token, oauth_secret = read_token_file(filename)
-    twitter = Twitter(auth=OAuth(oauth_token, oauth_secret, APIKEYS.SPOKENTIMELINE_CONSUMERKEY, APIKEYS.SPOKENTIMELINE_CONSUMERSECRET))
-    return twitter
+    oauth_token, oauth_secret = twitter.read_token_file(filename)
+    tw = twitter.Twitter(auth=twitter.OAuth(oauth_token, oauth_secret, APIKEYS.SPOKENTIMELINE_CONSUMERKEY, APIKEYS.SPOKENTIMELINE_CONSUMERSECRET))
+    return tw
 
 def printTweet(tweet):
     try:
