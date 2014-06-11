@@ -2,7 +2,7 @@ import twitter # sudo pip3 install twitter
 import urllib
 import json
 import APIKEYS
-import time
+import datetime
                 
 ''' MYCREDS.txt has the following format:
 oauthtokenvalue
@@ -27,7 +27,7 @@ def printTimeline(timeline):
         printTweet(tweet)        
 
 def getTweetData(tweet):
-    timestamp = time.strptime(tweet["created_at"], TIME_FORMAT)
+    timestamp = datetime.datetime.strptime(tweet["created_at"], TIME_FORMAT)
     return (tweet["id_str"], timestamp)
 
 def getTimelineData(tw):
@@ -37,7 +37,7 @@ def getTimeline(tw, numtweets=200):
     return tw.statuses.home_timeline(count=numtweets)
 
 def getEmbed(id_str):
-    url = "https://api.twitter.com/1/statuses/oembed.json?id=" + id_str
+    url = "https://api.twitter.com/1/statuses/oembed.json?id=" + id_str + "&omit_script=true"
     response = urllib.request.urlopen(url, cafile="cacert.pem")
     # Next line feels wrong, but is the right way to do it: http://stackoverflow.com/a/6862922/535741
     try:
