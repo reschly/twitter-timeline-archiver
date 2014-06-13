@@ -28,39 +28,36 @@ def new_tweet_data(prev_timestamp):
     tweet_data = getTimelineData(tw)
     return [(id_str, timestamp) for (id_str, timestamp) in tweet_data if (timestamp > prev_timestamp)]
 
-def write_html_header(handle, title="Tweets"):
-    header = '<html><head><title>%s</title></head><body>\n<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>\n' % (title,)
+def write_html_header(handle, title=b"Tweets"):
+    header = b'<html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>' + title + b'</title></head><body>\n<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>\n'
     handle.write(header)
 
 def write_tweets(tweet_data, handle):
     for (id_str, timestamp) in tweet_data:
-        try:
-            handle.write(getEmbed(id_str))
-        except UnicodeEncodeError:
-            pass #punt
+        handle.write(getEmbed(id_str))
 
 def write_html_trailer(handle):
-    handle.write("</body></html>")
+    handle.write(b"</body></html>")
 
 def read_tweets_from_html(filename):
     try:
-        f = open(filename, 'r')
+        f = open(filename, 'rb')
     except FileNotFoundError:
         return []
     html = f.read()
     regex = re.compile("<blockquote.+?</blockquote>")
-    tweets_html = regex.findall(html)
+    tweets_html = regex.findall(str(html, 'utf-8'))
     f.close()
     return tweets_html
 
-def append_tweets_to_html(tweet_data, filename, title="Tweets"):
+def append_tweets_to_html(tweet_data, filename, title=b"Tweets"):
     previous_tweets_html = read_tweets_from_html(filename)
-    f = open(filename, 'w')
+    f = open(filename, 'wb')
     write_html_header(f, title)
     write_tweets(tweet_data, f)
     for html in previous_tweets_html:
-        f.write(html)
-        f.write("\n")
+        f.write(bytes(html, 'utf-8'))
+        f.write(b"\n")
     write_html_trailer(f)
     f.close()
 
@@ -88,7 +85,7 @@ def main():
             new_timestamp = timestamp
     for hour in tweets_by_hour.keys():
         timestamp = tweets_by_hour[hour][0][1]
-        append_tweets_to_html(tweets_by_hour[hour], get_filename(timestamp), get_title(timestamp))
+        append_tweets_to_html(tweets_by_hour[hour], get_filename(timestamp), bytes(get_title(timestamp), 'utf-8'))
     write_timestamp(timestamp)
         
 if __name__ == "__main__":
