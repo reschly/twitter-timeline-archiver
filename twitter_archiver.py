@@ -3,6 +3,8 @@
 import datetime
 import pytz
 import re
+import os
+import sys
 from twitter_interface import getTwitterByConfig, getTimelineData, getEmbed, TIME_FORMAT
 
 
@@ -62,32 +64,36 @@ def append_tweets_to_html(tweet_data, filename, title=b"Tweets"):
     f.close()
 
 
-def get_filename(timestamp):
+def get_filename(timestamp, directory):
     # make a file for each out of the day
     # filename format: YYYY_MM_DD_HH.html
-    return timestamp.strftime("%Y_%m_%d_%H.html")
+    return os.path.join(directory, timestamp.strftime("%Y_%m_%d_%H.html"))
 
 def get_title(timestamp):
     # Tuesday July 8 1500
     return timestamp.strftime("%A %B %d %H00")
 
-def main():
+
+def main(directory="."):
     prev_timestamp = get_timestamp()
     new_timestamp = prev_timestamp
     tweet_data = new_tweet_data(prev_timestamp)
     tweets_by_hour = {}
     for (id_str, timestamp) in tweet_data:
         try:
-            tweets_by_hour[get_filename(timestamp)].append((id_str, timestamp))
+            tweets_by_hour[get_filename(timestamp, directory)].append((id_str, timestamp))
         except KeyError:
-            tweets_by_hour[get_filename(timestamp)] = [(id_str, timestamp)]
+            tweets_by_hour[get_filename(timestamp, directory)] = [(id_str, timestamp)]
         if (timestamp > new_timestamp):
             new_timestamp = timestamp
     for hour in tweets_by_hour.keys():
         timestamp = tweets_by_hour[hour][0][1]
-        append_tweets_to_html(tweets_by_hour[hour], get_filename(timestamp), bytes(get_title(timestamp), 'utf-8'))
+        append_tweets_to_html(tweets_by_hour[hour], get_filename(timestamp, directory), bytes(get_title(timestamp), 'utf-8'))
     write_timestamp(timestamp)
         
 if __name__ == "__main__":
-    main()
+    dirname = "."
+    if (len(sys.argv) == 2):
+        dirname = sys.argv[1]
+    main(dirname)
     
