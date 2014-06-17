@@ -3,6 +3,7 @@
 import re
 import os
 import sys
+import datetime
 from twitter_interface import getTwitterByConfig, getTimelineData, getEmbed
 
 
@@ -10,7 +11,7 @@ DEFAULT_SINCEID_FILE = "twitter_archiver_sinceid.txt"
 
 def write_sinceid(tweet_id, filename=DEFAULT_SINCEID_FILE):
     with open(filename, "w") as handle:
-        handle.write(str(id))
+        handle.write(str(tweet_id))
     
 def read_sinceid(filename=DEFAULT_SINCEID_FILE):
     try:
@@ -68,6 +69,30 @@ def get_title(timestamp):
     # Tuesday July 8 1500
     return timestamp.strftime("%A %B %d %H00")
 
+def cleanup(dirname):
+    # Remove logs that are more than 30 days old
+    # Chmod everything else to rw-r--r-- / 644
+    for filename in os.listdir(dirname):
+        if not os.path.isfile(filename):
+            pass
+        # get timestamp from filename
+        # format = YYYY_MM_DD_HH.html
+        name_parts = filename.split("_")
+        if len(name_parts) != 4:
+            continue
+        if not (name_parts[3].endswith(".html")):
+            continue
+        year = int(name_parts[0])
+        month = int(name_parts[1])
+        day = int(name_parts[2])
+        file_time = datetime.datetime(year=year, month=month, day=day)
+        now = datetime.datetime.now()
+        if (now - file_time) > datetime.timedelta(days=30):
+            os.remove(os.path.join(dirname, filename))
+        else:
+            os.chmod(os.path.join(dirname, filename), 0o644) #python3
+        
+
 
 def main(directory="."):
     since_id = read_sinceid()
@@ -84,6 +109,7 @@ def main(directory="."):
     for filename in tweets_by_hour.keys():
         append_tweets_to_html(tweets_by_hour[filename], filename, bytes(filename, 'utf-8'))
     write_sinceid(new_since_id)
+    cleanup(dirname)
         
 if __name__ == "__main__":
     dirname = "."
