@@ -1,7 +1,5 @@
 #! /usr/bin/env python3
 
-import datetime
-import pytz
 import re
 import os
 import sys
@@ -9,34 +7,32 @@ from twitter_interface import getTwitterByConfig, getTimelineData, getEmbed, TIM
 
 
 DEFAULT_TIMESTAMP_FILE = "twitter_archiver_timestamp.txt"
+DEFAULT_SINCEID_FILE = "twitter_archiver_sinceid.txt"
 
-def write_timestamp(ts, filename=DEFAULT_TIMESTAMP_FILE):
-    handle = open(filename, 'w')
-    handle.write(ts.strftime(TIME_FORMAT))
-    handle.close()
+def write_sinceid(id, filename=DEFAULT_SINCEID_FILE):
+    with open(filename, "w") as handle:
+        handle.write(str(id))
     
-def get_timestamp(filename=DEFAULT_TIMESTAMP_FILE):
+def read_sinceid(filename=DEFAULT_SINCEID_FILE):
     try:
-        handle = open(filename, 'r')
-        ts = datetime.datetime.strptime(handle.read(), TIME_FORMAT)
-        handle.close()
-    except (FileNotFoundError, ValueError):
-        ts = datetime.datetime.fromtimestamp(0, tz=pytz.utc)
-    return ts    
+        with open(filename, "r") as handle:
+            id_str = handle.read()
+            return int(id_str)
+    except FileNotFoundError:
+        return 1
     
-
-def new_tweet_data(prev_timestamp):
+def new_tweet_data(since_id=1):
     tw = getTwitterByConfig()
-    tweet_data = getTimelineData(tw)
-    return [(id_str, timestamp) for (id_str, timestamp) in tweet_data if (timestamp > prev_timestamp)]
+    tweet_data = getTimelineData(tw, since_id=since_id)
+    return tweet_data
 
 def write_html_header(handle, title=b"Tweets"):
     header = b'<html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>' + title + b'</title></head><body>\n<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>\n'
     handle.write(header)
 
-def write_tweets(tweet_data, handle):
-    for (id_str, timestamp) in tweet_data:
-        handle.write(getEmbed(id_str))
+def write_tweets(tweet_ids, handle):
+    for tweet_id in tweet_ids:
+        handle.write(getEmbed(tweet_id))
 
 def write_html_trailer(handle):
     handle.write(b"</body></html>")
@@ -75,21 +71,20 @@ def get_title(timestamp):
 
 
 def main(directory="."):
-    prev_timestamp = get_timestamp()
-    new_timestamp = prev_timestamp
-    tweet_data = new_tweet_data(prev_timestamp)
+    since_id = read_sinceid()
+    new_since_id = since_id
+    tweet_data = new_tweet_data(since_id)
     tweets_by_hour = {}
-    for (id_str, timestamp) in tweet_data:
+    for (tweet_id, timestamp) in tweet_data:
         try:
-            tweets_by_hour[get_filename(timestamp, directory)].append((id_str, timestamp))
+            tweets_by_hour[get_filename(timestamp, directory)].append(tweet_id)
         except KeyError:
-            tweets_by_hour[get_filename(timestamp, directory)] = [(id_str, timestamp)]
-        if (timestamp > new_timestamp):
-            new_timestamp = timestamp
-    for hour in tweets_by_hour.keys():
-        timestamp = tweets_by_hour[hour][0][1]
-        append_tweets_to_html(tweets_by_hour[hour], get_filename(timestamp, directory), bytes(get_title(timestamp), 'utf-8'))
-    write_timestamp(timestamp)
+            tweets_by_hour[get_filename(timestamp, directory)] = [tweet_id]
+        if tweet_id > new_since_id:
+            new_since_id = tweet_id
+    for filename in tweets_by_hour.keys():
+        append_tweets_to_html(tweets_by_hour[filename], filename, bytes(filename, 'utf-8'))
+    write_sinceid(new_since_id)
         
 if __name__ == "__main__":
     dirname = "."

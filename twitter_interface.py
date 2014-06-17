@@ -28,16 +28,16 @@ def printTimeline(timeline):
 
 def getTweetData(tweet):
     timestamp = datetime.datetime.strptime(tweet["created_at"], TIME_FORMAT)
-    return (tweet["id_str"], timestamp)
+    return (tweet["id"], timestamp)
 
-def getTimelineData(tw):
-    return [getTweetData(tweet) for tweet in getTimeline(tw)]
+def getTimelineData(tw, since_id=1):
+    return [getTweetData(tweet) for tweet in getTimeline(tw, since_id)]
         
-def getTimeline(tw, numtweets=200):
-    return tw.statuses.home_timeline(count=numtweets)
+def getTimeline(tw, count=200, since_id=1):
+    return tw.statuses.home_timeline(count=count, since_id=since_id)
 
-def getEmbed(id_str):
-    url = "https://api.twitter.com/1/statuses/oembed.json?id=" + id_str + "&omit_script=true"
+def getEmbed(tweet_id):
+    url = "https://api.twitter.com/1/statuses/oembed.json?id=" + str(tweet_id) + "&omit_script=true"
     response = urllib.request.urlopen(url, cafile="cacert.pem")
     # Next line feels wrong, but is the right way to do it: http://stackoverflow.com/a/6862922/535741
     json_data = json.loads(response.readall().decode('utf-8'))
@@ -48,5 +48,5 @@ if __name__ == "__main__":
     t = getTwitterByConfig()
     timeline = getTimeline(t)
     for tweet in timeline:
-        id_str, timestamp = getTweetData(tweet)
-        print(getEmbed(id_str))
+        (tweet_id, timestamp) = getTweetData(tweet)
+        print(getEmbed(tweet_id))
