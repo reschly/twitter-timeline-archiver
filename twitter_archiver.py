@@ -3,13 +3,12 @@
 import re
 import os
 import sys
-from twitter_interface import getTwitterByConfig, getTimelineData, getEmbed, TIME_FORMAT
+from twitter_interface import getTwitterByConfig, getTimelineData, getEmbed
 
 
-DEFAULT_TIMESTAMP_FILE = "twitter_archiver_timestamp.txt"
 DEFAULT_SINCEID_FILE = "twitter_archiver_sinceid.txt"
 
-def write_sinceid(id, filename=DEFAULT_SINCEID_FILE):
+def write_sinceid(tweet_id, filename=DEFAULT_SINCEID_FILE):
     with open(filename, "w") as handle:
         handle.write(str(id))
     
