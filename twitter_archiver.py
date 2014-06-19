@@ -4,10 +4,25 @@ import re
 import os
 import sys
 import datetime
-from twitter_interface import getTwitterByConfig, getTimelineData, getEmbed
+import pytz
+from twitter_interface import getTwitterByConfig, getTimelineData, getEmbed, TIME_FORMAT
 
 
 DEFAULT_SINCEID_FILE = "twitter_archiver_sinceid.txt"
+DEFAULT_TIMESTAMP_FILE = "twitter_archiver_timestamp.txt"
+
+def write_timestamp(ts, filename=DEFAULT_TIMESTAMP_FILE):
+    with open(filename, 'w') as handle:
+        handle.write(ts.strftime(TIME_FORMAT))
+        
+def read_timestamp(filename=DEFAULT_TIMESTAMP_FILE):
+    try:
+        handle = open(filename, 'r')
+        ts = datetime.datetime.strptime(handle.read(), TIME_FORMAT)
+        handle.close()
+    except (IOError, ValueError):
+        ts = datetime.datetime.fromtimestamp(0, tz=pytz.utc)
+    return ts 
 
 def write_sinceid(tweet_id, filename=DEFAULT_SINCEID_FILE):
     with open(filename, "w") as handle:
@@ -18,7 +33,7 @@ def read_sinceid(filename=DEFAULT_SINCEID_FILE):
         with open(filename, "r") as handle:
             id_str = handle.read()
             return int(id_str)
-    except FileNotFoundError:
+    except IOError:
         return 1
     
 def new_tweet_data(since_id=1):
@@ -40,7 +55,7 @@ def write_html_trailer(handle):
 def read_tweets_from_html(filename):
     try:
         f = open(filename, 'rb')
-    except FileNotFoundError:
+    except IOError:
         return []
     html = f.read()
     regex = re.compile("<blockquote.+?</blockquote>")
@@ -96,19 +111,26 @@ def cleanup(dirname):
 
 def main(directory="."):
     since_id = read_sinceid()
+    prev_timestamp = read_timestamp()
     new_since_id = since_id
+    new_timestamp = prev_timestamp
     tweet_data = new_tweet_data(since_id)
     tweets_by_hour = {}
     for (tweet_id, timestamp) in tweet_data:
+        if (timestamp < prev_timestamp):
+            continue # it appears that home_timeline may returns tweets prior to the given since_id
         try:
             tweets_by_hour[get_filename(timestamp, directory)].append(tweet_id)
         except KeyError:
             tweets_by_hour[get_filename(timestamp, directory)] = [tweet_id]
         if tweet_id > new_since_id:
             new_since_id = tweet_id
+        if timestamp > new_timestamp:
+            new_timestamp = timestamp
     for filename in tweets_by_hour.keys():
         append_tweets_to_html(tweets_by_hour[filename], filename, bytes(filename, 'utf-8'))
     write_sinceid(new_since_id)
+    write_timestamp(new_timestamp)
     cleanup(dirname)
         
 if __name__ == "__main__":
