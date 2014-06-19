@@ -3,6 +3,7 @@ import urllib
 import json
 import APIKEYS
 import datetime
+import os
                 
 ''' MYCREDS.txt has the following format:
 oauthtokenvalue
@@ -11,8 +12,8 @@ oauthsecretvalue
 
 TIME_FORMAT = "%a %b %d %H:%M:%S %z %Y"
 
-def getTwitterByConfig(filename="MYCREDS.txt"):
-    oauth_token, oauth_secret = twitter.read_token_file(filename)
+def getTwitterByConfig(filename="MYCREDS.txt", path='.'):
+    oauth_token, oauth_secret = twitter.read_token_file(os.path.join(path, filename))
     tw = twitter.Twitter(auth=twitter.OAuth(oauth_token, oauth_secret, APIKEYS.SPOKENTIMELINE_CONSUMERKEY, APIKEYS.SPOKENTIMELINE_CONSUMERSECRET))
     return tw
 
@@ -36,9 +37,9 @@ def getTimelineData(tw, since_id=1):
 def getTimeline(tw, count=200, since_id=1):
     return tw.statuses.home_timeline(count=count, since_id=since_id)
 
-def getEmbed(tweet_id):
+def getEmbed(tweet_id, path='.'):
     url = "https://api.twitter.com/1/statuses/oembed.json?id=" + str(tweet_id) + "&omit_script=true"
-    response = urllib.request.urlopen(url, cafile="cacert.pem")
+    response = urllib.request.urlopen(url, cafile=os.path.join(path, "cacert.pem"))
     # Next line feels wrong, but is the right way to do it: http://stackoverflow.com/a/6862922/535741
     json_data = json.loads(response.readall().decode('utf-8'))
     return json_data["html"].encode('utf-8')
