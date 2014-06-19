@@ -116,15 +116,17 @@ def main(pathdir, outdir):
     new_timestamp = prev_timestamp
     tweet_data = new_tweet_data(since_id, pathdir)
     tweets_by_hour = {}
+    if len(tweet_data) > 0:
+        new_since_id = tweet_data[0][0]
     for (tweet_id, timestamp) in tweet_data:
-        if (timestamp < prev_timestamp):
-            continue # it appears that home_timeline may returns tweets prior to the given since_id
+        #if (timestamp < prev_timestamp):
+            #continue # it appears that home_timeline may returns tweets prior to the given since_id
         try:
             tweets_by_hour[get_filename(timestamp, outdir)].append(tweet_id)
         except KeyError:
             tweets_by_hour[get_filename(timestamp, outdir)] = [tweet_id]
-        if tweet_id > new_since_id:
-            new_since_id = tweet_id
+        #if tweet_id > new_since_id:
+            #new_since_id = tweet_id
         if timestamp > new_timestamp:
             new_timestamp = timestamp
     for filename in tweets_by_hour.keys():
