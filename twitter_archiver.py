@@ -114,7 +114,7 @@ def main(pathdir, outdir):
     prev_timestamp = read_timestamp(os.path.join(pathdir, DEFAULT_TIMESTAMP_FILE))
     new_since_id = since_id
     new_timestamp = prev_timestamp
-    tweet_data = new_tweet_data(since_id)
+    tweet_data = new_tweet_data(since_id, pathdir)
     tweets_by_hour = {}
     for (tweet_id, timestamp) in tweet_data:
         if (timestamp < prev_timestamp):
